@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Pixelated Drum Pad</title>
+    <style>
+      body {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        filter: url(#pixelate);
+        font-family: "Courier New", monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #000;
+        color: #0f0;
+      }
+      .drumpad {
+        width: 100px;
+        height: 100px;
+        margin: 10px;
+        cursor: pointer;
+        border: 4px solid #0f0;
+      }
+      #kickPad {
+        background-color: #00f;
+      }
+      #snarePad {
+        background-color: #f00;
+      }
+      .active {
+        filter: brightness(2);
+      }
+      .svg-filter {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+
+      h1 {
+        font-size: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" class="svg-filter">
+      <filter id="pixelate" x="0" y="0">
+        <feFlood x="4" y="4" height="2" width="2" />
+        <feComposite width="8" height="8" />
+        <feTile result="a" />
+        <feComposite in="SourceGraphic" in2="a" operator="in" />
+        <feMorphology operator="dilate" radius="1" />
+      </filter>
+    </svg>
+
+    <h1>Pixelated Drum Pad</h1>
+    <div id="drumPadContainer">
+      <div class="drumpad" id="kickPad"></div>
+      <div class="drumpad" id="snarePad"></div>
+    </div>
+
+    <script>
+      const pads = {
+        kickPad: {
+          sound: new Audio("didimi mogoya.mp3"),
+          key: "KeyQ",
+          isPlaying: false,
+        },
+        snarePad: {
+          sound: new Audio("Clap Chardro 1.wav"),
+          key: "KeyW",
+          isPlaying: false,
+        },
+      };
+
+      function toggleSound(padId, play) {
+        const pad = document.getElementById(padId);
+        const sound = pads[padId].sound;
+
+        if (play && !pads[padId].isPlaying) {
+          sound.currentTime = 0;
+          sound.play();
+          pad.classList.add("active");
+          pads[padId].isPlaying = true;
+        } else if (!play) {
+          sound.pause();
+          sound.currentTime = 0;
+          pad.classList.remove("active");
+          pads[padId].isPlaying = false;
+        }
+      }
+
+      for (let padId in pads) {
+        const pad = document.getElementById(padId);
+        pad.addEventListener("mousedown", () => toggleSound(padId, true));
+        pad.addEventListener("mouseup", () => toggleSound(padId, false));
+        pad.addEventListener("mouseleave", () => toggleSound(padId, false));
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (event.repeat) return; // Ignore key repeat events
+        for (let padId in pads) {
+          if (event.code === pads[padId].key) toggleSound(padId, true);
+        }
+      });
+
+      document.addEventListener("keyup", (event) => {
+        for (let padId in pads) {
+          if (event.code === pads[padId].key) toggleSound(padId, false);
+        }
+      });
+    </script>
+  </body>
+</html>
