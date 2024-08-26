@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Pixelated Drum Pad</title>
     <style>
@@ -38,9 +38,18 @@
         width: 0;
         height: 0;
       }
-
       h1 {
         font-size: 100px;
+      }
+      @media (max-width: 768px) {
+        .drumpad {
+          width: 150px;
+          height: 150px;
+          margin: 20px;
+        }
+        h1 {
+          font-size: 40px;
+        }
       }
     </style>
   </head>
@@ -62,68 +71,104 @@
     </div>
 
     <script>
-const pads = {
-  kickPad: {
-    sound: new Audio("Buckle Kick.wav"),
-    key: "KeyQ",
-    isPlaying: false,
-  },
-  snarePad: {
-    sound: new Audio("Clap Chardro 1.wav"),
-    key: "KeyW",
-    isPlaying: false,
-  },
-};
+      // Create an audio context
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-function toggleSound(padId, play) {
-  const pad = document.getElementById(padId);
-  const sound = pads[padId].sound;
+      const pads = {
+        kickPad: {
+          url: "didimi mogoya.mp3",
+          key: "KeyQ",
+        },
+        snarePad: {
+          url: "Clap Chardro 1.wav",
+          key: "KeyW",
+        },
+      };
 
-  if (play && !pads[padId].isPlaying) {
-    sound.currentTime = 0;
-    sound.play();
-    pad.classList.add("active");
-    pads[padId].isPlaying = true;
-  } else if (!play) {
-    sound.pause();
-    sound.currentTime = 0;
-    pad.classList.remove("active");
-    pads[padId].isPlaying = false;
-  }
-}
+      // Function to load an audio file and store it in a buffer
+      async function loadSound(url) {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        return await audioContext.decodeAudioData(arrayBuffer);
+      }
 
-for (let padId in pads) {
-  const pad = document.getElementById(padId);
-  
-  // Mouse events (for desktop)
-  pad.addEventListener("mousedown", () => toggleSound(padId, true));
-  pad.addEventListener("mouseup", () => toggleSound(padId, false));
-  pad.addEventListener("mouseleave", () => toggleSound(padId, false));
-  
-  // Touch events (for mobile)
-  pad.addEventListener("touchstart", (e) => {
-    e.preventDefault(); // Prevent default touch behavior
-    toggleSound(padId, true);
-  });
-  pad.addEventListener("touchend", (e) => {
-    e.preventDefault(); // Prevent default touch behavior
-    toggleSound(padId, false);
-  });
-}
+      // Load all sounds
+      async function loadAllSounds() {
+        for (let padId in pads) {
+          pads[padId].buffer = await loadSound(pads[padId].url);
+        }
+      }
 
-// Keyboard events (for desktop)
-document.addEventListener("keydown", (event) => {
-  if (event.repeat) return; // Ignore key repeat events
-  for (let padId in pads) {
-    if (event.code === pads[padId].key) toggleSound(padId, true);
-  }
-});
+      // Function to play a sound
+      function playSound(padId) {
+        const source = audioContext.createBufferSource();
+        source.buffer = pads[padId].buffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+        pads[padId].source = source;
+      }
 
-document.addEventListener("keyup", (event) => {
-  for (let padId in pads) {
-    if (event.code === pads[padId].key) toggleSound(padId, false);
-  }
-});
+      // Function to stop a sound
+      function stopSound(padId) {
+        if (pads[padId].source) {
+          pads[padId].source.stop(0);
+        }
+      }
+
+      // Function to handle pad activation
+      function handlePad(padId, isActive) {
+        const pad = document.getElementById(padId);
+        if (isActive) {
+          playSound(padId);
+          pad.classList.add("active");
+        } else {
+          stopSound(padId);
+          pad.classList.remove("active");
+        }
+      }
+
+      // Set up event listeners once sounds are loaded
+      loadAllSounds().then(() => {
+        for (let padId in pads) {
+          const pad = document.getElementById(padId);
+          
+          // Touch events (for mobile)
+          pad.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            handlePad(padId, true);
+          });
+          pad.addEventListener("touchend", (e) => {
+            e.preventDefault();
+            handlePad(padId, false);
+          });
+          
+          // Mouse events (for desktop)
+          pad.addEventListener("mousedown", () => handlePad(padId, true));
+          pad.addEventListener("mouseup", () => handlePad(padId, false));
+          pad.addEventListener("mouseleave", () => handlePad(padId, false));
+        }
+
+        // Keyboard events (for desktop)
+        document.addEventListener("keydown", (event) => {
+          if (event.repeat) return;
+          for (let padId in pads) {
+            if (event.code === pads[padId].key) handlePad(padId, true);
+          }
+        });
+
+        document.addEventListener("keyup", (event) => {
+          for (let padId in pads) {
+            if (event.code === pads[padId].key) handlePad(padId, false);
+          }
+        });
+      });
+
+      // Resume audio context on user interaction (to handle autoplay policy)
+      document.body.addEventListener('touchstart', function() {
+        if (audioContext.state !== 'running') {
+          audioContext.resume();
+        }
+      }, false);
     </script>
   </body>
 </html>
