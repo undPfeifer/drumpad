@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Pixelated Drum Pad</title>
     <style>
@@ -72,16 +75,19 @@
 
     <script>
       // Create an audio context
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
 
       const pads = {
         kickPad: {
-          url: "Buckle Kick.wav",
+          url: "didimi mogoya.mp3",
           key: "KeyQ",
+          envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.3 },
         },
         snarePad: {
           url: "Clap Chardro 1.wav",
           key: "KeyW",
+          envelope: { attack: 0.01, decay: 0.05, sustain: 0.2, release: 0.1 },
         },
       };
 
@@ -99,19 +105,38 @@
         }
       }
 
-      // Function to play a sound
+      // Function to play a sound with envelope
       function playSound(padId) {
         const source = audioContext.createBufferSource();
         source.buffer = pads[padId].buffer;
-        source.connect(audioContext.destination);
-        source.start(0);
+
+        const gainNode = audioContext.createGain();
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        const now = audioContext.currentTime;
+        const env = pads[padId].envelope;
+
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(1, now + env.attack);
+        gainNode.gain.linearRampToValueAtTime(
+          env.sustain,
+          now + env.attack + env.decay
+        );
+
+        source.start(now);
         pads[padId].source = source;
+        pads[padId].gainNode = gainNode;
       }
 
-      // Function to stop a sound
+      // Function to stop a sound with release
       function stopSound(padId) {
-        if (pads[padId].source) {
-          pads[padId].source.stop(0);
+        if (pads[padId].source && pads[padId].gainNode) {
+          const now = audioContext.currentTime;
+          const release = pads[padId].envelope.release;
+
+          pads[padId].gainNode.gain.linearRampToValueAtTime(0, now + release);
+          pads[padId].source.stop(now + release);
         }
       }
 
@@ -131,7 +156,7 @@
       loadAllSounds().then(() => {
         for (let padId in pads) {
           const pad = document.getElementById(padId);
-          
+
           // Touch events (for mobile)
           pad.addEventListener("touchstart", (e) => {
             e.preventDefault();
@@ -141,7 +166,7 @@
             e.preventDefault();
             handlePad(padId, false);
           });
-          
+
           // Mouse events (for desktop)
           pad.addEventListener("mousedown", () => handlePad(padId, true));
           pad.addEventListener("mouseup", () => handlePad(padId, false));
@@ -164,11 +189,15 @@
       });
 
       // Resume audio context on user interaction (to handle autoplay policy)
-      document.body.addEventListener('touchstart', function() {
-        if (audioContext.state !== 'running') {
-          audioContext.resume();
-        }
-      }, false);
+      document.body.addEventListener(
+        "touchstart",
+        function () {
+          if (audioContext.state !== "running") {
+            audioContext.resume();
+          }
+        },
+        false
+      );
     </script>
   </body>
 </html>
