@@ -71,6 +71,7 @@
     <div id="drumPadContainer">
       <div class="drumpad" id="kickPad"></div>
       <div class="drumpad" id="snarePad"></div>
+      <div class="drumpad" id="hatPad"></div>
     </div>
 
     <script>
@@ -87,6 +88,11 @@
         snarePad: {
           url: "Clap Chardro 1.wav",
           key: "KeyW",
+          envelope: { attack: 0.01, decay: 0.05, sustain: 0.2, release: 0.1 },
+        },
+        hatPad: {
+          url: "ClosedHH Chardro 1.wav",
+          key: "KeyE",
           envelope: { attack: 0.01, decay: 0.05, sustain: 0.2, release: 0.1 },
         },
       };
