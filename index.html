@@ -62,55 +62,68 @@
     </div>
 
     <script>
-      const pads = {
-        kickPad: {
-          sound: new Audio("Buckle Kick.wav"),
-          key: "KeyQ",
-          isPlaying: false,
-        },
-        snarePad: {
-          sound: new Audio("Clap Chardro 1.wav"),
-          key: "KeyW",
-          isPlaying: false,
-        },
-      };
+const pads = {
+  kickPad: {
+    sound: new Audio("didimi mogoya.mp3"),
+    key: "KeyQ",
+    isPlaying: false,
+  },
+  snarePad: {
+    sound: new Audio("Clap Chardro 1.wav"),
+    key: "KeyW",
+    isPlaying: false,
+  },
+};
 
-      function toggleSound(padId, play) {
-        const pad = document.getElementById(padId);
-        const sound = pads[padId].sound;
+function toggleSound(padId, play) {
+  const pad = document.getElementById(padId);
+  const sound = pads[padId].sound;
 
-        if (play && !pads[padId].isPlaying) {
-          sound.currentTime = 0;
-          sound.play();
-          pad.classList.add("active");
-          pads[padId].isPlaying = true;
-        } else if (!play) {
-          sound.pause();
-          sound.currentTime = 0;
-          pad.classList.remove("active");
-          pads[padId].isPlaying = false;
-        }
-      }
+  if (play && !pads[padId].isPlaying) {
+    sound.currentTime = 0;
+    sound.play();
+    pad.classList.add("active");
+    pads[padId].isPlaying = true;
+  } else if (!play) {
+    sound.pause();
+    sound.currentTime = 0;
+    pad.classList.remove("active");
+    pads[padId].isPlaying = false;
+  }
+}
 
-      for (let padId in pads) {
-        const pad = document.getElementById(padId);
-        pad.addEventListener("mousedown", () => toggleSound(padId, true));
-        pad.addEventListener("mouseup", () => toggleSound(padId, false));
-        pad.addEventListener("mouseleave", () => toggleSound(padId, false));
-      }
+for (let padId in pads) {
+  const pad = document.getElementById(padId);
+  
+  // Mouse events (for desktop)
+  pad.addEventListener("mousedown", () => toggleSound(padId, true));
+  pad.addEventListener("mouseup", () => toggleSound(padId, false));
+  pad.addEventListener("mouseleave", () => toggleSound(padId, false));
+  
+  // Touch events (for mobile)
+  pad.addEventListener("touchstart", (e) => {
+    e.preventDefault(); // Prevent default touch behavior
+    toggleSound(padId, true);
+  });
+  pad.addEventListener("touchend", (e) => {
+    e.preventDefault(); // Prevent default touch behavior
+    toggleSound(padId, false);
+  });
+}
 
-      document.addEventListener("keydown", (event) => {
-        if (event.repeat) return; // Ignore key repeat events
-        for (let padId in pads) {
-          if (event.code === pads[padId].key) toggleSound(padId, true);
-        }
-      });
+// Keyboard events (for desktop)
+document.addEventListener("keydown", (event) => {
+  if (event.repeat) return; // Ignore key repeat events
+  for (let padId in pads) {
+    if (event.code === pads[padId].key) toggleSound(padId, true);
+  }
+});
 
-      document.addEventListener("keyup", (event) => {
-        for (let padId in pads) {
-          if (event.code === pads[padId].key) toggleSound(padId, false);
-        }
-      });
+document.addEventListener("keyup", (event) => {
+  for (let padId in pads) {
+    if (event.code === pads[padId].key) toggleSound(padId, false);
+  }
+});
     </script>
   </body>
 </html>
